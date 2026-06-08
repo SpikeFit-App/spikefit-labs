@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpikeFit Labs — Experimental Athletic Tech</title>
+    <!-- Tailwind CSS for high-fidelity responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for advanced sporty/technical icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Space+Grotesk', sans-serif;
+            background-color: #05070c;
+        }
+
+        /* Neon & Fluoro Pink Custom Utilities to match SpikeFit.app precisely */
+        .text-neon-pink {
+            color: #ff2e93;
+        }
+        .bg-neon-pink {
+            background-color: #ff2e93;
+        }
+        .border-neon-pink {
+            border-color: #ff2e93;
+        }
+        .neon-glow-pink {
+            box-shadow: 0 0 25px rgba(255, 46, 147, 0.35);
+        }
+        .neon-border-pink {
+            border-color: rgba(255, 46, 147, 0.3);
+        }
+        .neon-text-glow {
+            text-shadow: 0 0 12px rgba(255, 46, 147, 0.6);
+        }
+
+        /* Custom scrollbar matching the dark lab aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f1f2e;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff2e93;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-[#ff2e93] selection:text-white">
+
+    <!-- Glowing Background Orbs for Deep UI Dimension -->
+    <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#ff2e93]/10 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+    <div class="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+    <!-- Header / Navigation -->
+    <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3 group">
+                <div class="bg-neon-pink text-white p-2 rounded-lg font-bold text-xl tracking-tight flex items-center justify-center w-10 h-10 transition-transform group-hover:scale-105">
+                    S⚡
+                </div>
+                <div>
+                    <span class="font-bold text-lg text-white tracking-wider">SPIKEFIT</span>
+                    <span class="text-[10px] block text-neon-pink font-bold tracking-widest uppercase neon-text-glow">LABORATORIES</span>
+                </div>
+            </a>
+            
+            <div class="flex items-center space-x-4">
+                <a href="../index.html" class="text-xs font-bold text-slate-400 hover:text-white transition-colors">
+                    Back to Main App
+                </a>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#ff2e93] animate-ping"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="max-w-6xl w-full mx-auto px-6 pt-12 pb-8 md:pt-20 md:pb-12 text-center relative">
+        <div class="inline-flex items-center space-x-2 bg-slate-950/80 px-4 py-2 rounded-full border border-slate-800 mb-6">
+            <span class="w-2 h-2 rounded-full bg-[#ff2e93] animate-pulse"></span>
+            <span class="text-xs font-semibold uppercase tracking-widest text-slate-300">Sandbox & Feature Playground</span>
+        </div>
+        
+        <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight leading-none mb-6">
+            Where Vertical Power Meets <br class="hidden md:block" />
+            <span class="text-neon-pink neon-text-glow">Experimental Sports Tech</span>
+        </h1>
+        
+        <p class="text-slate-400 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed">
+            SpikeFit Labs is our active research R&D sandbox. Here, we build next-generation, client-side browser features to help volleyball athletes maximize jump height, test biomechanics, and protect tendon integrity.
+        </p>
+
+        <!-- Dynamic Trust Banner -->
+        <div class="mt-8 flex flex-wrap justify-center items-center gap-6 text-xs text-slate-500">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                <span>100% Client-Side RAM Buffer</span>
+            </div>
+            <div class="hidden sm:block text-slate-800">|</div>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-server-slash text-[#ff2e93]"></i>
+                <span>Zero Database Uploads</span>
+            </div>
+            <div class="hidden sm:block text-slate-800">|</div>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-bolt text-amber-400"></i>
+                <span>HTML5 Web-API Native</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lab Modules Grid -->
+    <main class="max-w-6xl w-full mx-auto px-6 pb-20 flex-grow">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- FEATURE 1: VIDEO JUMP ANALYZER (LIVE & STABLE) -->
+            <div class="bg-slate-900/60 border border-slate-800/80 hover:border-[#ff2e93]/50 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden">
+                <!-- Status Tag -->
+                <div class="absolute top-6 right-6 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Stable Prototype</span>
+                </div>
+
+                <div class="space-y-4 pr-16">
+                    <div class="w-14 h-14 rounded-2xl bg-[#ff2e93]/10 text-[#ff2e93] border border-[#ff2e93]/20 flex items-center justify-center text-2xl group-hover:bg-[#ff2e93] group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-film"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Video Jump Mat</h2>
+                        <p class="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">Target: /jump-analyzer/index.html</p>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Scientific laboratory-level vertical jump calculations using high-speed, frame-by-frame video stepping. Use a slow-mo clip or record a jump live using your device's camera to establish takeoff, landing, and true hang-time measurements.
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center">
+                    <div class="flex items-center space-x-3 text-xs text-slate-500">
+                        <span>FPS Target: 30-240</span>
+                        <span>•</span>
+                        <span>Accuracy: &plusmn;4ms</span>
+                    </div>
+                    <a href="jump-analyzer/index.html" class="bg-[#ff2e93] hover:bg-[#ff1a84] text-white font-bold text-xs py-3 px-5 rounded-xl transition duration-200 flex items-center space-x-2 group shadow-lg shadow-[#ff2e93]/10">
+                        <span>Launch Tool</span>
+                        <i class="fa-solid fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- FEATURE 2: ACOUSTIC ESTIMATOR (EXPERIMENTAL RESEARCH) -->
+            <div class="bg-slate-900/60 border border-slate-800/80 hover:border-cyan-500/50 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 relative group overflow-hidden">
+                <!-- Status Tag -->
+                <div class="absolute top-6 right-6 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center space-x-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>Research Stage</span>
+                </div>
+
+                <div class="space-y-4 pr-16">
+                    <div class="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center text-2xl group-hover:bg-cyan-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-microphone-lines"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Acoustic Jump Sensor</h2>
+                        <p class="text-xs font-semibold text-slate-500 mt-1 uppercase tracking-wider">Acoustic State Machine</p>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        A hands-free jump height estimator that monitors dynamic noise levels on hardwood courts. Filters floor shoe squeaks and thuds through a double-threshold air gap silence analyzer to clock true takeoff and landing timestamps.
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-800/80 flex justify-between items-center">
+                    <div class="flex items-center space-x-3 text-xs text-slate-500">
+                        <span>Web Audio API</span>
+                        <span>•</span>
+                        <span>Mic Dependent</span>
+                    </div>
+                    <span class="bg-slate-850 text-slate-500 font-bold text-xs py-3 px-5 rounded-xl border border-slate-800 flex items-center space-x-2">
+                        <i class="fa-solid fa-flask"></i>
+                        <span>Internal Research</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- FEATURE 3: W.O.R.K. AUTO REGULATOR (DEVELOPMENT ROADMAP) -->
+            <div class="bg-slate-900/30 border border-slate-800/40 rounded-3xl p-6 md:p-8 flex flex-col justify-between opacity-75 relative group">
+                <!-- Status Tag -->
+                <div class="absolute top-6 right-6 bg-slate-800 text-slate-500 border border-slate-750 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                    Roadmap
+                </div>
+
+                <div class="space-y-4 pr-16">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-850 text-slate-500 border border-slate-800 flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-300 tracking-tight">W.O.R.K. Auto-Regulator</h2>
+                        <p class="text-xs font-semibold text-slate-600 mt-1 uppercase tracking-wider">Workload & Readiness Key</p>
+                    </div>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        An integrated, localized workload manager tracking your Acute:Chronic Workload Ratio (ACWR). Helps jump athletes prevent patellar tendinopathy (Jumper's Knee) by dynamically scaling training load in localStorage.
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-850/60 flex justify-between items-center text-xs text-slate-600">
+                    <span>Target: Local Storage Engine</span>
+                    <span class="font-bold">Next Sprint</span>
+                </div>
+            </div>
+
+            <!-- FEATURE 4: GHOST QR LEADERBOARDS (DEVELOPMENT ROADMAP) -->
+            <div class="bg-slate-900/30 border border-slate-800/40 rounded-3xl p-6 md:p-8 flex flex-col justify-between opacity-75 relative group">
+                <!-- Status Tag -->
+                <div class="absolute top-6 right-6 bg-slate-800 text-slate-500 border border-slate-750 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                    Roadmap
+                </div>
+
+                <div class="space-y-4 pr-16">
+                    <div class="w-14 h-14 rounded-2xl bg-slate-850 text-slate-500 border border-slate-800 flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-300 tracking-tight">Ghost QR Competition</h2>
+                        <p class="text-xs font-semibold text-slate-600 mt-1 uppercase tracking-wider">Zero-Backend Leaderboards</p>
+                    </div>
+                    <p class="text-slate-500 text-sm leading-relaxed">
+                        Compete with teammates peer-to-peer without server databases. Encodes your weekly jump streak and combine scores into a compressed QR code that teammates scan to run against your local "Ghost Leaderboard".
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-850/60 flex justify-between items-center text-xs text-slate-600">
+                    <span>Target: Peer-to-Peer QR Parsing</span>
+                    <span class="font-bold">Backlog</span>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer Privacy Reassurance -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-8 px-6">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 p-2.5 rounded-full text-emerald-400">
+                    <i class="fa-solid fa-circle-nodes text-lg animate-pulse"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white">🔒 The Sandbox Protocol</h4>
+                    <p class="text-xs text-slate-400 max-w-lg mt-0.5">
+                        SpikeFit Labs features are kept 100% sandboxed. No data transfers, cookies, tracking metrics, or centralized caching ever leave this page. Your performance metrics remain completely yours.
+                    </p>
+                </div>
+            </div>
+            <a href="../index.html" class="bg-slate-900 hover:bg-slate-850 text-white font-bold text-xs py-2 px-4 rounded-xl border border-slate-800 transition">
+                Return Home
+            </a>
+        </div>
+    </footer>
+
+</body>
+</html>
