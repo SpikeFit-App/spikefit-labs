@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpikeFit Video Jump Mat</title>
+    <!-- Tailwind CSS for modern athletic styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for high-performance icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Space+Grotesk', sans-serif;
+            background-color: #0b0f19;
+        }
+        .neon-glow-emerald {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);
+        }
+        .neon-glow-rose {
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+        }
+        .custom-range::-webkit-slider-thumb {
+            background: #10b981;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500 text-slate-950 p-2 rounded-lg font-bold text-xl tracking-tight flex items-center justify-center w-10 h-10">
+                    S⚡
+                </div>
+                <div>
+                    <span class="font-bold text-lg text-white">SPIKEFIT</span>
+                    <span class="text-xs block text-emerald-400 font-semibold tracking-wider uppercase">Video Analysis Lab</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+                <i class="fa-solid fa-shield-halved text-emerald-400 text-sm"></i>
+                <span class="text-xs font-semibold text-slate-300">100% Private & Local</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl w-full mx-auto p-4 md:p-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Video Workspace & Precision Scrubbing (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- Video Player Workspace Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
+                
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs uppercase tracking-widest font-bold text-slate-400">Video Workbench</span>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs text-slate-400 font-bold">Camera FPS:</label>
+                        <select id="fpsSelect" class="bg-slate-950 border border-slate-800 rounded-lg text-emerald-400 text-xs px-2.5 py-1 font-mono font-bold focus:outline-none focus:border-emerald-500">
+                            <option value="30">30 FPS (Standard)</option>
+                            <option value="60" selected>60 FPS (High-Res Mobile)</option>
+                            <option value="120">120 FPS (Slow-Mo)</option>
+                            <option value="240">240 FPS (Ultra Slow-Mo)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Video Display Area / Local Dropzone & Recording Frame -->
+                <div id="videoContainer" class="relative bg-slate-950 rounded-xl aspect-video border border-slate-850 flex flex-col items-center justify-center overflow-hidden group">
+                    
+                    <!-- Hidden inputs -->
+                    <input type="file" id="videoInput" accept="video/*" class="hidden">
+                    
+                    <!-- 1. DUAL CHOICE DROPZONE -->
+                    <div id="dropzonePrompt" class="text-center p-8 flex flex-col items-center justify-center w-full h-full space-y-6">
+                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 transition-colors">
+                            <i class="fa-solid fa-video text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-200">Ready to Capture Your Jump</p>
+                            <p class="text-xs text-slate-500 mt-1">Record a new jump using your camera or import a saved video</p>
+                        </div>
+                        
+                        <!-- Choice Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-3 w-full max-w-sm justify-center">
+                            <button id="activateCamBtn" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 flex-1 shadow-lg shadow-emerald-500/10">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Record Live Jump</span>
+                            </button>
+                            <button id="browseFileBtn" class="bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 flex-1">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                                <span>Import Video File</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. CAMERA RECORDER LIVE PREVIEW PANEL -->
+                    <div id="cameraPanel" class="hidden absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+                        <video id="cameraPreview" class="w-full h-full object-cover" autoplay muted playsinline></video>
+                        
+                        <!-- Camera Overlays & Controls -->
+                        <div class="absolute inset-x-0 bottom-4 flex flex-col items-center justify-center space-y-3 px-4 z-20">
+                            <!-- Recording Timer & Status -->
+                            <div id="recordingStatus" class="bg-slate-950/80 backdrop-blur-md border border-slate-800 px-4 py-1.5 rounded-full flex items-center space-x-2 text-xs font-bold shadow-lg">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400" id="statusPulseDot"></span>
+                                <span id="statusText" class="text-slate-200">Camera Active</span>
+                                <span id="recTimer" class="font-mono text-rose-400 hidden">00:00</span>
+                            </div>
+                            
+                            <!-- Trigger Action Buttons -->
+                            <div class="flex items-center space-x-4">
+                                <button id="cancelCamBtn" class="bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">
+                                    Cancel
+                                </button>
+                                <button id="triggerRecBtn" class="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 border-4 border-slate-900 shadow-xl flex items-center justify-center transition active:scale-95 text-white">
+                                    <i id="triggerRecIcon" class="fa-solid fa-circle text-2xl"></i>
+                                </button>
+                                <div class="w-12 h-10"></div> <!-- spacing balance placeholder -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. FRAME PLAYBACK ANALYSIS VIEWER -->
+                    <video id="player" class="w-full h-full hidden object-contain" playsinline></video>
+                </div>
+
+                <!-- Playback & Frame scrubbing controls -->
+                <div id="scrubControls" class="mt-4 space-y-4 opacity-50 pointer-events-none transition-opacity duration-300">
+                    
+                    <!-- Scrub slider -->
+                    <div class="flex items-center space-x-4">
+                        <span id="currentTimeLabel" class="text-xs font-mono text-slate-500">0.00s</span>
+                        <input id="timelineSlider" type="range" min="0" max="100" step="0.001" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range accent-emerald-500">
+                        <span id="durationLabel" class="text-xs font-mono text-slate-500">0.00s</span>
+                    </div>
+
+                    <!-- Button Action Panel -->
+                    <div class="flex flex-wrap justify-between items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-850">
+                        <!-- Left controls: Stepping -->
+                        <div class="flex items-center space-x-1.5">
+                            <button id="stepBackBtn" title="Back 1 Frame" class="bg-slate-900 hover:bg-slate-850 text-slate-300 p-2.5 rounded-lg border border-slate-800 transition active:scale-95 text-xs flex items-center space-x-1">
+                                <i class="fa-solid fa-chevron-left"></i>
+                                <span class="hidden sm:inline">-1 Frame</span>
+                            </button>
+                            <button id="playBtn" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 p-2.5 rounded-lg transition font-bold px-4 text-xs flex items-center space-x-1.5">
+                                <i id="playIcon" class="fa-solid fa-play"></i>
+                                <span id="playText">Play</span>
+                            </button>
+                            <button id="stepForwardBtn" title="Forward 1 Frame" class="bg-slate-900 hover:bg-slate-850 text-slate-300 p-2.5 rounded-lg border border-slate-800 transition active:scale-95 text-xs flex items-center space-x-1">
+                                <span class="hidden sm:inline">+1 Frame</span>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <!-- Right controls: Frame Markers -->
+                        <div class="flex items-center space-x-2">
+                            <button id="markTakeoffBtn" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-lg font-bold text-xs transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-person-running"></i>
+                                <span>Set Takeoff</span>
+                            </button>
+                            <button id="markLandingBtn" class="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30 px-3 py-2 rounded-lg font-bold text-xs transition flex items-center space-x-1.5">
+                                <i class="fa-solid fa-circle-down"></i>
+                                <span>Set Landing</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Right Column: Results & Flight Science (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col space-y-6">
+            
+            <!-- Jump Calculations Display -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between min-h-[320px]">
+                <div>
+                    <h3 class="font-bold text-white mb-4 text-sm uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Telemetry Dashboard</span>
+                        </span>
+                        <button id="clearWorkspaceBtn" class="text-slate-500 hover:text-rose-400 transition-colors text-xs font-bold">
+                            Reset Work
+                        </button>
+                    </h3>
+
+                    <!-- Frame marker checklist -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-850 text-sm">
+                            <span class="text-slate-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-circle text-[8px] text-rose-500 animate-pulse"></i>
+                                <span>Takeoff Timestamp</span>
+                            </span>
+                            <span id="takeoffVal" class="font-mono text-rose-400 font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-850 text-sm">
+                            <span class="text-slate-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-circle text-[8px] text-cyan-400 animate-pulse"></i>
+                                <span>Landing Timestamp</span>
+                            </span>
+                            <span id="landingVal" class="font-mono text-cyan-400 font-bold">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Calculations Result Card -->
+                <div id="resultsCard" class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 p-5 rounded-xl text-center hidden neon-glow-emerald">
+                    <span id="runTypeBadge" class="text-xs font-bold uppercase tracking-widest text-emerald-400 block mb-2">⚡ JUMP METRICS ESTABLISHED</span>
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-850/80 pt-4">
+                        <div>
+                            <span class="text-[10px] text-slate-500 block font-bold uppercase">Hang Time</span>
+                            <span id="outHangtime" class="text-2xl font-bold text-white font-mono">0.000s</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 block font-bold uppercase">Vertical Apex</span>
+                            <span id="outHeight" class="text-2xl font-bold text-emerald-400 font-mono">0.0 in</span>
+                            <span id="outHeightMetric" class="text-xs text-slate-500 block mt-0.5">(0.0 cm)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty state placeholder -->
+                <div id="resultsPlaceholder" class="border border-dashed border-slate-800 p-6 rounded-xl text-center text-slate-500 text-sm flex-grow flex items-center justify-center">
+                    <div>
+                        <i class="fa-solid fa-film text-2xl mb-2 text-slate-700 block"></i>
+                        Capture a live video or import a clip to start profiling vertical telemetry.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Privacy Reassurance Block -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex items-start space-x-3">
+                <div class="bg-emerald-500/10 p-2.5 rounded-full text-emerald-400 shrink-0">
+                    <i class="fa-solid fa-lock text-base"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white">🔒 Zero-Data Camera Sandbox</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed mt-0.5">
+                        We respect your security. Camera preview and recorded chunks remain completely on-device in volatile RAM. No servers or third-party SDKs are connected to your camera stream.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer Space -->
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 px-6 text-center">
+        <p class="text-xs text-slate-500">SpikeFit Sports Laboratory — Standard Physics Model ($g \approx 9.80665 \text{ m/s}^2$)</p>
+    </footer>
+
+    <!-- Interactive Video Recorder & Precision Scrubbing Engine -->
+    <script>
+        // DOM Handles - Navigation/Uploading Mode
+        const videoInput = document.getElementById('videoInput');
+        const dropzonePrompt = document.getElementById('dropzonePrompt');
+        const browseFileBtn = document.getElementById('browseFileBtn');
+        const activateCamBtn = document.getElementById('activateCamBtn');
+        
+        // DOM Handles - Camera Panel Mode
+        const cameraPanel = document.getElementById('cameraPanel');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const recordingStatus = document.getElementById('recordingStatus');
+        const statusPulseDot = document.getElementById('statusPulseDot');
+        const statusText = document.getElementById('statusText');
+        const recTimer = document.getElementById('recTimer');
+        const cancelCamBtn = document.getElementById('cancelCamBtn');
+        const triggerRecBtn = document.getElementById('triggerRecBtn');
+        const triggerRecIcon = document.getElementById('triggerRecIcon');
+
+        // DOM Handles - Workspace Player Mode
+        const player = document.getElementById('player');
+        const fpsSelect = document.getElementById('fpsSelect');
+        const scrubControls = document.getElementById('scrubControls');
+        const currentTimeLabel = document.getElementById('currentTimeLabel');
+        const durationLabel = document.getElementById('durationLabel');
+        const timelineSlider = document.getElementById('timelineSlider');
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = document.getElementById('playIcon');
+        const playText = document.getElementById('playText');
+        const stepBackBtn = document.getElementById('stepBackBtn');
+        const stepForwardBtn = document.getElementById('stepForwardBtn');
+        const markTakeoffBtn = document.getElementById('markTakeoffBtn');
+        const markLandingBtn = document.getElementById('markLandingBtn');
+        const clearWorkspaceBtn = document.getElementById('clearWorkspaceBtn');
+        
+        // Output Displays
+        const takeoffVal = document.getElementById('takeoffVal');
+        const landingVal = document.getElementById('landingVal');
+        const resultsCard = document.getElementById('resultsCard');
+        const resultsPlaceholder = document.getElementById('resultsPlaceholder');
+        const outHangtime = document.getElementById('outHangtime');
+        const outHeight = document.getElementById('outHeight');
+        const outHeightMetric = document.getElementById('outHeightMetric');
+        const runTypeBadge = document.getElementById('runTypeBadge');
+
+        // State parameters
+        let videoFPS = 60;
+        let takeoffTime = null;
+        let landingTime = null;
+        let sourceMode = "import"; // "import" or "live_record"
+
+        // Camera capture parameters
+        let localStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let recSeconds = 0;
+        let recInterval = null;
+
+        // Trigger native file prompt
+        browseFileBtn.addEventListener('click', () => videoInput.click());
+
+        // File upload handling
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadVideoSource(file, "import");
+            }
+        });
+
+        // Setup Video URL and load controls
+        function loadVideoSource(fileOrBlob, mode) {
+            sourceMode = mode;
+            const objectURL = URL.createObjectURL(fileOrBlob);
+            
+            // Unmount existing player resource
+            player.pause();
+            player.src = objectURL;
+            player.load();
+            
+            // Display workbench player
+            player.classList.remove('hidden');
+            dropzonePrompt.classList.add('hidden');
+            cameraPanel.classList.add('hidden');
+            
+            // Activate scrubbing interface controls
+            scrubControls.classList.remove('opacity-50', 'pointer-events-none');
+            
+            // Clear prior jump metrics
+            clearWorkspace();
+        }
+
+        /* LIVE CAMERA RECORDER CODE */
+        
+        // Initialize Live Camera Access
+        async function activateLiveCamera() {
+            try {
+                // Request back camera if possible on mobile, fallback to front
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: "environment" },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false // We do not need audio for visual frame checks
+                };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+                cameraPreview.srcObject = localStream;
+                
+                // Show Camera interface, hide dropzones
+                cameraPanel.classList.remove('hidden');
+                dropzonePrompt.classList.add('hidden');
+                player.classList.add('hidden');
+                
+                // Reset states
+                isRecording = false;
+                recordedChunks = [];
+                resetRecordingBadge();
+                
+            } catch (err) {
+                console.error("Camera access error: ", err);
+                showLocalNotification("Camera Permission Error", "Ensure camera access is allowed in your browser settings to record your jumps live.");
+                deactivateCameraStream();
+            }
+        }
+
+        function deactivateCameraStream() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            cameraPreview.srcObject = null;
+            cameraPanel.classList.add('hidden');
+            dropzonePrompt.classList.remove('hidden');
+            clearInterval(recInterval);
+        }
+
+        function resetRecordingBadge() {
+            statusPulseDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+            statusText.innerText = "Camera Active";
+            recTimer.classList.add('hidden');
+            triggerRecIcon.className = "fa-solid fa-circle text-2xl text-rose-500";
+            cameraPanel.classList.remove('neon-glow-rose');
+            cameraPanel.classList.add('border-slate-850');
+            cameraPanel.classList.remove('border-rose-600');
+        }
+
+        // Toggle Live Recording State
+        function toggleRecording() {
+            if (!isRecording) {
+                startCameraRecording();
+            } else {
+                stopCameraRecording();
+            }
+        }
+
+        function startCameraRecording() {
+            recordedChunks = [];
+            
+            // Auto detect supported container formats
+            let options = {};
+            if (MediaRecorder.isTypeSupported('video/mp4')) {
+                options = { mimeType: 'video/mp4' };
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                options = { mimeType: 'video/webm;codecs=vp9' };
+            } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                options = { mimeType: 'video/webm' };
+            }
+
+            try {
+                mediaRecorder = new MediaRecorder(localStream, options);
+            } catch (e) {
+                console.error("Creating MediaRecorder failed: ", e);
+                showLocalNotification("Recording Error", "Your browser is unable to record streams in this configuration.");
+                return;
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                loadVideoSource(blob, "live_record");
+                
+                // Turn off live feed instantly to save battery & maintain privacy
+                deactivateCameraStream();
+            };
+
+            // Start recorder
+            mediaRecorder.start();
+            isRecording = true;
+            
+            // Adjust overlays for recording state
+            statusPulseDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
+            statusText.innerText = "RECORDING";
+            recTimer.classList.remove('hidden');
+            triggerRecIcon.className = "fa-solid fa-stop text-xl text-white";
+            
+            // Neon Glow indicator
+            cameraPanel.classList.add('neon-glow-rose');
+            cameraPanel.classList.remove('border-slate-850');
+            cameraPanel.classList.add('border-rose-600');
+
+            // Timer updater
+            recSeconds = 0;
+            recTimer.innerText = "00:00";
+            recInterval = setInterval(() => {
+                recSeconds++;
+                const mins = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+                const secs = String(recSeconds % 60).padStart(2, '0');
+                recTimer.innerText = `${mins}:${secs}`;
+                
+                // Max limits protection (1 minute safety limit for local RAM buffers)
+                if (recSeconds >= 60) {
+                    stopCameraRecording();
+                }
+            }, 1000);
+        }
+
+        function stopCameraRecording() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                mediaRecorder.stop();
+            }
+            clearInterval(recInterval);
+            isRecording = false;
+        }
+
+        // Camera Action listeners
+        activateCamBtn.addEventListener('click', activateLiveCamera);
+        cancelCamBtn.addEventListener('click', deactivateCameraStream);
+        triggerRecBtn.addEventListener('click', toggleRecording);
+
+        /* VIDEO WORKBENCH TIMELINE IMPLEMENTATION */
+
+        // Initialize timeline capabilities on load
+        player.addEventListener('loadedmetadata', () => {
+            timelineSlider.max = player.duration;
+            durationLabel.innerText = `${player.duration.toFixed(2)}s`;
+            updateSliderAndTime();
+        });
+
+        player.addEventListener('timeupdate', () => {
+            if (!player.paused) {
+                updateSliderAndTime();
+            }
+        });
+
+        // Handle frame rate choices
+        fpsSelect.addEventListener('change', (e) => {
+            videoFPS = parseInt(e.target.value);
+            recalculateMetrics(); // Real-time metric recalculation if changes made
+        });
+
+        // Frame microstepping functions
+        function stepFrames(amount) {
+            player.pause();
+            playIcon.className = "fa-solid fa-play";
+            playText.innerText = "Play";
+            
+            // Frame duration is 1 / FPS
+            const frameDuration = 1 / videoFPS;
+            let targetTime = player.currentTime + (amount * frameDuration);
+            
+            // Clamp within video bounds
+            targetTime = Math.max(0, Math.min(player.duration, targetTime));
+            player.currentTime = targetTime;
+            
+            updateSliderAndTime();
+        }
+
+        stepBackBtn.addEventListener('click', () => stepFrames(-1));
+        stepForwardBtn.addEventListener('click', () => stepFrames(1));
+
+        // Slider Scrub actions
+        timelineSlider.addEventListener('input', (e) => {
+            player.pause();
+            playIcon.className = "fa-solid fa-play";
+            playText.innerText = "Play";
+            player.currentTime = e.target.value;
+            updateSliderAndTime();
+        });
+
+        function updateSliderAndTime() {
+            timelineSlider.value = player.currentTime;
+            currentTimeLabel.innerText = `${player.currentTime.toFixed(3)}s`;
+        }
+
+        // Play/Pause toggler
+        playBtn.addEventListener('click', () => {
+            if (player.paused) {
+                player.play();
+                playIcon.className = "fa-solid fa-pause";
+                playText.innerText = "Pause";
+            } else {
+                player.pause();
+                playIcon.className = "fa-solid fa-play";
+                playText.innerText = "Play";
+            }
+        });
+
+        // Marker triggers
+        markTakeoffBtn.addEventListener('click', () => {
+            takeoffTime = player.currentTime;
+            takeoffVal.innerText = `${takeoffTime.toFixed(3)}s`;
+            recalculateMetrics();
+        });
+
+        markLandingBtn.addEventListener('click', () => {
+            landingTime = player.currentTime;
+            landingVal.innerText = `${landingTime.toFixed(3)}s`;
+            recalculateMetrics();
+        });
+
+        // Clear Workspace actions
+        function clearWorkspace() {
+            takeoffTime = null;
+            landingTime = null;
+            takeoffVal.innerText = "--";
+            landingVal.innerText = "--";
+            
+            resultsCard.classList.add('hidden');
+            resultsPlaceholder.classList.remove('hidden');
+        }
+
+        // Complete reset (Return back to camera upload choice page)
+        function completeReset() {
+            clearWorkspace();
+            player.pause();
+            player.src = "";
+            player.classList.add('hidden');
+            dropzonePrompt.classList.remove('hidden');
+            scrubControls.classList.add('opacity-50', 'pointer-events-none');
+            deactivateCameraStream();
+        }
+
+        clearWorkspaceBtn.addEventListener('click', completeReset);
+
+        // Core Scientific Jump Equations
+        function recalculateMetrics() {
+            if (takeoffTime === null || landingTime === null) return;
+
+            // Handle landing before takeoff logic
+            if (landingTime <= takeoffTime) {
+                showLocalNotification("Calculation Error", "Your landing timestamp must occur after your takeoff timestamp!");
+                landingTime = null;
+                landingVal.innerText = "--";
+                return;
+            }
+
+            const hangtimeSec = landingTime - takeoffTime;
+            
+            // Physics math
+            const gImperial = 386.2205; // gravity in in/s^2
+            const gMetric = 9.80665; // gravity in m/s^2
+
+            // Jump height d = 0.125 * g * t^2
+            const heightInches = 0.125 * gImperial * (hangtimeSec * hangtimeSec);
+            const heightCm = (0.125 * gMetric * (hangtimeSec * hangtimeSec)) * 100;
+
+            // Update UI Output
+            outHangtime.innerText = `${hangtimeSec.toFixed(3)}s`;
+            outHeight.innerText = `${heightInches.toFixed(1)} in`;
+            outHeightMetric.innerText = `(${heightCm.toFixed(1)} cm)`;
+
+            // Display metadata run badge depending on input source
+            if (sourceMode === "live_record") {
+                runTypeBadge.innerHTML = `<i class="fa-solid fa-camera mr-1 text-emerald-400"></i> ⚡ Live Capture Matched`;
+            } else {
+                runTypeBadge.innerHTML = `<i class="fa-solid fa-file-video mr-1 text-emerald-400"></i> ⚡ Imported Clip Matched`;
+            }
+
+            // Show results view
+            resultsPlaceholder.classList.add('hidden');
+            resultsCard.classList.remove('hidden');
+        }
+
+        // Helper custom modal alert
+        function showLocalNotification(title, message) {
+            const modal = document.createElement('div');
+            modal.className = "fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-all duration-300";
+            modal.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 relative shadow-2xl">
+                    <h3 class="text-white font-bold text-lg mb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                        <span>${title}</span>
+                    </h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">${message}</p>
+                    <button class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl transition border border-slate-750">
+                        Okay, got it
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('button').addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+    </script>
+</body>
+</html>
