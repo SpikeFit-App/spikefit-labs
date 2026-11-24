@@ -1,0 +1,55 @@
+name: Fetch pose model
+
+# Downloads Google's official MediaPipe Pose Landmarker (full) model into the
+# repo so the Approach Analyzer page loads it from our own origin, with no
+# third-party requests at runtime. Source URL comes from the Models table at
+# https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/fetch-pose-model.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download model
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://huggingface.co/litert-community/MediaPipe-PoseLandmarker-Full/resolve/main/pose_landmarker_full.task"
+          dest="approach-analyzer/vendor/mediapipe/pose_landmarker_full.task"
+          mkdir -p "$(dirname "$dest")"
+          status=$(curl --location --show-error --silent --output "$dest.new" --write-out "%{http_code}" "$url")
+          echo "HTTP status: $status"
+          if [ "$status" != "200" ]; then
+            echo "::error::Model download failed with HTTP $status"
+            exit 1
+          fi
+          echo "Size: $(stat -c %s "$dest.new") bytes"
+          echo "SHA-256: $(sha256sum "$dest.new" | cut -d' ' -f1)"
+          # A .task bundle is a zip that holds the detector and landmarker models.
+          unzip -l "$dest.new"
+          unzip -l "$dest.new" | grep -q '\.tflite' || { echo "::error::Download is not a model bundle"; exit 1; }
+          mv "$dest.new" "$dest"
+
+      - name: Commit model if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add approach-analyzer/vendor/mediapipe/pose_landmarker_full.task
+          if git diff --cached --quiet; then
+            echo "Model unchanged, nothing to commit."
+          else
+            git commit -m "Add MediaPipe pose_landmarker_full.task model"
+            git push
+          fi
