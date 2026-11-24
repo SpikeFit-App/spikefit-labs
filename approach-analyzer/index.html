@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--
+        Privacy guard: the MediaPipe library sends usage logs to
+        odml.pa.googleapis.com and has no setting to turn that off. This policy
+        only lets the page make network requests (fetch/XHR) to its own site,
+        so the browser blocks the logging call. Keep this tag first in <head>.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' blob: data:">
+    <title>SpikeFit Approach Analyzer</title>
+    <!-- Tailwind CSS for layout, matching the other Labs pages -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #0b0f19;
+        }
+        .custom-range::-webkit-slider-thumb {
+            background: #22d3ee;
+            cursor: pointer;
+        }
+        .check-pass { border-color: rgba(16, 185, 129, 0.35); }
+        .check-warn { border-color: rgba(245, 158, 11, 0.35); }
+        .check-fail { border-color: rgba(244, 63, 94, 0.4); }
+        .check-na   { border-color: rgba(51, 65, 85, 0.8); }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="../index.html" class="flex items-center space-x-3">
+                <div class="bg-cyan-400 text-slate-950 p-2 rounded-lg font-bold text-xl tracking-tight flex items-center justify-center w-10 h-10">
+                    S⚡
+                </div>
+                <div>
+                    <span class="font-bold text-lg text-white">SPIKEFIT</span>
+                    <span class="text-xs block text-cyan-400 font-semibold tracking-wider uppercase">Approach Analyzer · Research</span>
+                </div>
+            </a>
+            <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+                <i class="fa-solid fa-shield-halved text-emerald-400 text-sm"></i>
+                <span class="text-xs font-semibold text-slate-300">Video Never Leaves Your Device</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl w-full mx-auto p-4 md:p-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left column: video workbench -->
+        <div class="lg:col-span-7 flex flex-col space-y-6">
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6 relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs uppercase tracking-widest font-bold text-slate-400">Video Workbench</span>
+                    <div class="flex items-center space-x-2">
+                        <label for="rateSelect" class="text-xs text-slate-400 font-bold">Analysis detail:</label>
+                        <select id="rateSelect" class="bg-slate-950 border border-slate-800 rounded-lg text-cyan-400 text-xs px-2.5 py-1 font-mono font-bold focus:outline-none focus:border-cyan-500">
+                            <option value="30" selected>30 frames/s (faster)</option>
+                            <option value="60">60 frames/s (more detail)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="videoContainer" class="relative bg-slate-950 rounded-xl aspect-video border border-slate-800 flex flex-col items-center justify-center overflow-hidden">
+                    <input type="file" id="videoInput" accept="video/*" class="hidden">
+
+                    <!-- Dropzone -->
+                    <div id="dropzonePrompt" class="text-center p-8 flex flex-col items-center justify-center w-full h-full space-y-6">
+                        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
+                            <i class="fa-solid fa-person-running text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-200">Load a side-view approach jump</p>
+                            <p class="text-xs text-slate-500 mt-1">Record one now or import a saved clip</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3 w-full max-w-sm justify-center">
+                            <button id="activateCamBtn" class="bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 flex-1">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>Record Approach</span>
+                            </button>
+                            <button id="browseFileBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs py-3 px-4 rounded-xl transition flex items-center justify-center space-x-2 flex-1">
+                                <i class="fa-solid fa-file-arrow-up"></i>
+                                <span>Import Video File</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Camera panel -->
+                    <div id="cameraPanel" class="hidden absolute inset-0 w-full h-full bg-black flex items-center justify-center">
+                        <video id="cameraPreview" class="w-full h-full object-contain" autoplay muted playsinline></video>
+                        <div class="absolute inset-x-0 bottom-4 flex flex-col items-center space-y-3 px-4 z-20">
+                            <div class="bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-full flex items-center space-x-2 text-xs font-bold">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400" id="statusPulseDot"></span>
+                                <span id="statusText" class="text-slate-200">Camera Active</span>
+                                <span id="recTimer" class="font-mono text-rose-400 hidden">00:00</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <button id="cancelCamBtn" class="bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white px-4 py-2.5 rounded-xl text-xs font-bold transition">Cancel</button>
+                                <button id="triggerRecBtn" class="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 border-4 border-slate-900 flex items-center justify-center transition active:scale-95 text-white">
+                                    <i id="triggerRecIcon" class="fa-solid fa-circle text-2xl"></i>
+                                </button>
+                                <div class="w-12 h-10"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Player with pose overlay -->
+                    <video id="player" class="w-full h-full hidden object-contain" playsinline muted></video>
+                    <canvas id="overlay" class="absolute inset-0 w-full h-full pointer-events-none hidden"></canvas>
+
+                    <!-- Analysis progress -->
+                    <div id="progressPanel" class="hidden absolute inset-x-0 bottom-0 bg-slate-950/90 border-t border-slate-800 p-4 z-30">
+                        <div class="flex justify-between text-xs font-bold mb-2">
+                            <span id="progressText" class="text-cyan-300">Loading body tracking…</span>
+                            <button id="cancelAnalysisBtn" class="text-slate-400 hover:text-rose-400">Cancel</button>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="progressBar" class="h-full bg-cyan-400 transition-all" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrub and analysis controls -->
+                <div id="scrubControls" class="mt-4 space-y-4 opacity-50 pointer-events-none transition-opacity duration-300">
+                    <div class="flex items-center space-x-4">
+                        <span id="currentTimeLabel" class="text-xs font-mono text-slate-500">0.00s</span>
+                        <input id="timelineSlider" type="range" min="0" max="100" step="0.001" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer custom-range accent-cyan-400">
+                        <span id="durationLabel" class="text-xs font-mono text-slate-500">0.00s</span>
+                    </div>
+
+                    <div class="flex flex-wrap justify-between items-center gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center space-x-1.5">
+                            <button id="stepBackBtn" title="Back 1 frame" class="bg-slate-900 hover:bg-slate-800 text-slate-300 p-2.5 rounded-lg border border-slate-800 text-xs"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button id="playBtn" class="bg-cyan-400 hover:bg-cyan-300 text-slate-950 p-2.5 rounded-lg font-bold px-4 text-xs flex items-center space-x-1.5">
+                                <i id="playIcon" class="fa-solid fa-play"></i>
+                                <span id="playText">Play</span>
+                            </button>
+                            <button id="stepForwardBtn" title="Forward 1 frame" class="bg-slate-900 hover:bg-slate-800 text-slate-300 p-2.5 rounded-lg border border-slate-800 text-xs"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="markStartBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-2 rounded-lg font-bold text-xs">Set Start <span id="startVal" class="font-mono text-cyan-400">0.00</span></button>
+                            <button id="markEndBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 px-3 py-2 rounded-lg font-bold text-xs">Set End <span id="endVal" class="font-mono text-cyan-400">end</span></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        <button id="analyzeBtn" class="flex-1 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-sm py-3 px-5 rounded-xl transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Analyze Approach</span>
+                        </button>
+                        <button id="resetBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-rose-400 font-bold text-xs py-3 px-4 rounded-xl transition">
+                            New Clip
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event chips and hip height chart -->
+            <div id="timelineCard" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 md:p-6">
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-3">Jump to a moment</h3>
+                <div id="eventChips" class="flex flex-wrap gap-2 mb-5"></div>
+                <h3 class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-1">Hip height</h3>
+                <p class="text-xs text-slate-500 mb-3">Hips should drop on the intent step, then stay level through the penultimate step.</p>
+                <canvas id="hipChart" class="w-full h-40 bg-slate-950 rounded-xl border border-slate-800"></canvas>
+            </div>
+        </div>
+
+        <!-- Right column: guide, results, history -->
+        <div class="lg:col-span-5 flex flex-col space-y-6">
+
+            <!-- Filming guide -->
+            <div id="guideCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                <h3 class="font-bold text-sm uppercase tracking-wider text-cyan-400 mb-3 flex items-center space-x-2">
+                    <i class="fa-solid fa-video"></i><span>How to film</span>
+                </h3>
+                <ul class="text-xs text-slate-400 space-y-2 leading-relaxed list-disc pl-4">
+                    <li>Film from the side, square to the approach path. Prop the phone up so it doesn't move.</li>
+                    <li>Keep the whole body in frame, head to feet, from your ready stance through the landing.</li>
+                    <li>Use slow motion if your phone has it. Fast steps blur at normal speed.</li>
+                    <li>One athlete in frame. Trim long clips with Set Start and Set End.</li>
+                </ul>
+            </div>
+
+            <!-- Results -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col min-h-[280px]">
+                <h3 class="font-bold text-sm uppercase tracking-wider text-cyan-400 mb-4 flex items-center justify-between">
+                    <span class="flex items-center space-x-2"><i class="fa-solid fa-clipboard-check"></i><span>Approach Checklist</span></span>
+                    <span id="scoreBadge" class="hidden text-xs font-mono text-slate-300 bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg"></span>
+                </h3>
+                <div id="resultsError" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm rounded-xl p-4 mb-3"></div>
+                <div id="resultsList" class="space-y-3"></div>
+                <div id="resultsPlaceholder" class="border border-dashed border-slate-800 p-6 rounded-xl text-center text-slate-500 text-sm flex-grow flex items-center justify-center">
+                    <div>
+                        <i class="fa-solid fa-person-running text-2xl mb-2 text-slate-700 block"></i>
+                        Load a clip and tap Analyze Approach.
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-4 leading-relaxed">
+                    Research build. Targets come from coaching cues (intent step, medium-long-short steps, slow-to-fast tempo, forward-back-up arms). Thresholds are starting guesses, so treat results as a coaching aid, not lab measurement.
+                </p>
+            </div>
+
+            <!-- History -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                <h3 class="font-bold text-sm uppercase tracking-wider text-cyan-400 mb-3 flex items-center justify-between">
+                    <span class="flex items-center space-x-2"><i class="fa-solid fa-clock-rotate-left"></i><span>Saved Results</span></span>
+                    <button id="clearHistoryBtn" class="text-slate-500 hover:text-rose-400 text-xs font-bold">Clear All</button>
+                </h3>
+                <div id="historyList" class="space-y-2 text-xs text-slate-400"></div>
+                <p class="text-[11px] text-slate-500 mt-3">Only scores are saved, in this browser. Videos are never stored.</p>
+            </div>
+
+            <!-- Privacy -->
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 flex items-start space-x-3">
+                <div class="bg-emerald-500/10 p-2.5 rounded-full text-emerald-400 shrink-0">
+                    <i class="fa-solid fa-lock text-base"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white">🔒 On-Device Body Tracking</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed mt-0.5">
+                        The tracking model runs in your browser from files hosted with this page. Your video stays in memory on this device and is gone when you close the tab.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-950 border-t border-slate-900 py-6 px-6 text-center">
+        <p class="text-xs text-slate-500">SpikeFit Labs · Body tracking by MediaPipe Pose Landmarker (Apache 2.0)</p>
+    </footer>
+
+    <script type="module">
+        import { FilesetResolver, PoseLandmarker } from "./vendor/mediapipe/vision_bundle.mjs";
+        import { analyzeApproach } from "./analysis.js";
+
+        const MODEL_PATH = "./vendor/mediapipe/pose_landmarker_full.task";
+        const WASM_PATH = "./vendor/mediapipe/wasm";
+        const HISTORY_KEY = "spikefit_labs_approach_history_v1";
+        const HISTORY_MAX = 30;
+
+        const $ = id => document.getElementById(id);
+        const player = $("player"), overlay = $("overlay"), ctx = overlay.getContext("2d");
+
+        // ---------- state ----------
+        let landmarker = null;
+        let tsCounter = 0;            // detectForVideo needs increasing timestamps
+        let frames = [];              // {t, lm:[{x,y,v}] in video pixels | null}
+        let lastResult = null;
+        let rangeStart = 0, rangeEnd = null;
+        let cancelRequested = false;
+        let sourceMode = "import";
+        let localStream = null, mediaRecorder = null, recordedChunks = [], isRecording = false, recInterval = null;
+        window.__approachAnalyzer = { get frames() { return frames; }, get result() { return lastResult; } };
+
+        // ---------- loading video ----------
+        $("browseFileBtn").addEventListener("click", () => $("videoInput").click());
+        $("videoInput").addEventListener("change", e => {
+            const file = e.target.files[0];
+            if (file) loadVideoSource(file, "import");
+        });
+
+        function loadVideoSource(fileOrBlob, mode) {
+            sourceMode = mode;
+            if (player.src) URL.revokeObjectURL(player.src);
+            player.pause();
+            player.src = URL.createObjectURL(fileOrBlob);
+            player.load();
+            player.classList.remove("hidden");
+            overlay.classList.remove("hidden");
+            $("dropzonePrompt").classList.add("hidden");
+            $("cameraPanel").classList.add("hidden");
+            $("scrubControls").classList.remove("opacity-50", "pointer-events-none");
+            clearResults();
+            frames = [];
+            rangeStart = 0; rangeEnd = null;
+            $("startVal").textContent = "0.00";
+            $("endVal").textContent = "end";
+        }
+
+        // ---------- camera recording (same approach as Video Jump Mat) ----------
+        async function activateLiveCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false,
+                });
+                $("cameraPreview").srcObject = localStream;
+                $("cameraPanel").classList.remove("hidden");
+                $("dropzonePrompt").classList.add("hidden");
+                player.classList.add("hidden");
+                overlay.classList.add("hidden");
+                isRecording = false;
+                resetRecordingBadge();
+            } catch (err) {
+                console.error("Camera access error:", err);
+                notify("Camera Permission Error", `Allow camera access in your browser settings to record. (${err.name}: ${err.message})`);
+                deactivateCamera();
+            }
+        }
+
+        function deactivateCamera() {
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+            $("cameraPreview").srcObject = null;
+            $("cameraPanel").classList.add("hidden");
+            if (player.classList.contains("hidden")) $("dropzonePrompt").classList.remove("hidden");
+            clearInterval(recInterval);
+        }
+
+        function resetRecordingBadge() {
+            $("statusPulseDot").className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+            $("statusText").textContent = "Camera Active";
+            $("recTimer").classList.add("hidden");
+            $("triggerRecIcon").className = "fa-solid fa-circle text-2xl";
+        }
+
+        function startRecording() {
+            recordedChunks = [];
+            let options = {};
+            for (const type of ["video/mp4", "video/webm;codecs=vp9", "video/webm"]) {
+                if (MediaRecorder.isTypeSupported(type)) { options = { mimeType: type }; break; }
+            }
+            try {
+                mediaRecorder = new MediaRecorder(localStream, options);
+            } catch (e) {
+                console.error("MediaRecorder failed:", e);
+                notify("Recording Error", `This browser can't record video here. (${e.name}: ${e.message})`);
+                return;
+            }
+            mediaRecorder.ondataavailable = ev => { if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "video/webm" });
+                deactivateCamera();
+                loadVideoSource(blob, "live_record");
+            };
+            mediaRecorder.start();
+            isRecording = true;
+            $("statusPulseDot").className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
+            $("statusText").textContent = "RECORDING";
+            $("recTimer").classList.remove("hidden");
+            $("triggerRecIcon").className = "fa-solid fa-stop text-xl";
+            let secs = 0;
+            $("recTimer").textContent = "00:00";
+            recInterval = setInterval(() => {
+                secs++;
+                $("recTimer").textContent = `${String(Math.floor(secs / 60)).padStart(2, "0")}:${String(secs % 60).padStart(2, "0")}`;
+                if (secs >= 30) stopRecording(); // approaches are short; cap memory use
+            }, 1000);
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+            clearInterval(recInterval);
+            isRecording = false;
+        }
+
+        $("activateCamBtn").addEventListener("click", activateLiveCamera);
+        $("cancelCamBtn").addEventListener("click", deactivateCamera);
+        $("triggerRecBtn").addEventListener("click", () => (isRecording ? stopRecording() : startRecording()));
+
+        // ---------- playback controls ----------
+        player.addEventListener("loadedmetadata", () => {
+            $("timelineSlider").max = player.duration;
+            $("durationLabel").textContent = `${player.duration.toFixed(2)}s`;
+            sizeOverlay();
+            updateTime();
+        });
+        player.addEventListener("seeked", () => { updateTime(); drawOverlay(); });
+        player.addEventListener("ended", () => setPlayUi(false));
+        window.addEventListener("resize", () => { sizeOverlay(); drawOverlay(); drawHipChart(); });
+
+        function setPlayUi(playing) {
+            $("playIcon").className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+            $("playText").textContent = playing ? "Pause" : "Play";
+        }
+
+        $("playBtn").addEventListener("click", () => {
+            if (player.paused) { player.play(); setPlayUi(true); requestAnimationFrame(playLoop); }
+            else { player.pause(); setPlayUi(false); }
+        });
+
+        function playLoop() {
+            updateTime();
+            drawOverlay();
+            if (!player.paused && !player.ended) requestAnimationFrame(playLoop);
+        }
+
+        const frameStep = () => 1 / Number($("rateSelect").value);
+        function stepFrames(n) {
+            player.pause(); setPlayUi(false);
+            player.currentTime = Math.max(0, Math.min(player.duration, player.currentTime + n * frameStep()));
+        }
+        $("stepBackBtn").addEventListener("click", () => stepFrames(-1));
+        $("stepForwardBtn").addEventListener("click", () => stepFrames(1));
+        $("timelineSlider").addEventListener("input", e => {
+            player.pause(); setPlayUi(false);
+            player.currentTime = Number(e.target.value);
+        });
+
+        function updateTime() {
+            $("timelineSlider").value = player.currentTime;
+            $("currentTimeLabel").textContent = `${player.currentTime.toFixed(3)}s`;
+        }
+
+        $("markStartBtn").addEventListener("click", () => {
+            rangeStart = player.currentTime;
+            $("startVal").textContent = rangeStart.toFixed(2);
+        });
+        $("markEndBtn").addEventListener("click", () => {
+            rangeEnd = player.currentTime;
+            $("endVal").textContent = rangeEnd.toFixed(2);
+        });
+
+        $("resetBtn").addEventListener("click", () => {
+            player.pause();
+            if (player.src) URL.revokeObjectURL(player.src);
+            player.removeAttribute("src");
+            player.load();
+            player.classList.add("hidden");
+            overlay.classList.add("hidden");
+            $("dropzonePrompt").classList.remove("hidden");
+            $("scrubControls").classList.add("opacity-50", "pointer-events-none");
+            $("videoInput").value = "";
+            frames = [];
+            clearResults();
+        });
+
+        // ---------- pose tracking ----------
+        async function getLandmarker() {
+            if (landmarker) return landmarker;
+            const fileset = await FilesetResolver.forVisionTasks(WASM_PATH);
+            const options = delegate => ({
+                baseOptions: { modelAssetPath: MODEL_PATH, delegate },
+                runningMode: "VIDEO",
+                numPoses: 1,
+            });
+            try {
+                landmarker = await PoseLandmarker.createFromOptions(fileset, options("GPU"));
+            } catch (gpuErr) {
+                console.warn("GPU delegate failed, falling back to CPU:", gpuErr);
+                landmarker = await PoseLandmarker.createFromOptions(fileset, options("CPU"));
+            }
+            return landmarker;
+        }
+
+        function seekTo(t) {
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error(`Seek to ${t.toFixed(3)}s timed out`)), 5000);
+                player.addEventListener("seeked", () => { clearTimeout(timer); resolve(); }, { once: true });
+                player.currentTime = t;
+            });
+        }
+
+        $("cancelAnalysisBtn").addEventListener("click", () => { cancelRequested = true; });
+
+        $("analyzeBtn").addEventListener("click", async () => {
+            if (!player.src || !player.duration) return;
+            const start = Math.min(rangeStart, player.duration);
+            const end = rangeEnd !== null && rangeEnd > start ? rangeEnd : player.duration;
+            if (end - start > 20) {
+                notify("Clip Too Long", "Analyze 20 seconds or less. Use Set Start and Set End to trim to one approach.");
+                return;
+            }
+            cancelRequested = false;
+            player.pause(); setPlayUi(false);
+            $("analyzeBtn").disabled = true;
+            $("progressPanel").classList.remove("hidden");
+            setProgress(0, "Loading body tracking…");
+            clearResults();
+
+            try {
+                const lm = await getLandmarker();
+                const step = frameStep();
+                const W = player.videoWidth, H = player.videoHeight;
+                const out = [];
+                const total = Math.max(1, Math.floor((end - start) / step));
+                for (let k = 0; k <= total; k++) {
+                    if (cancelRequested) throw new Error("cancelled");
+                    const t = Math.min(end, start + k * step);
+                    await seekTo(t);
+                    tsCounter += 1000 / Number($("rateSelect").value);
+                    const res = lm.detectForVideo(player, Math.round(tsCounter));
+                    const pose = res.landmarks && res.landmarks[0];
+                    out.push({
+                        t,
+                        lm: pose ? pose.map(p => ({ x: p.x * W, y: p.y * H, v: p.visibility ?? 1 })) : null,
+                    });
+                    if (k % 5 === 0) setProgress(k / total, `Tracking body… frame ${k + 1} of ${total + 1}`);
+                }
+                frames = out;
+                setProgress(1, "Scoring approach…");
+                lastResult = analyzeApproach(frames);
+                renderResults(lastResult);
+                if (lastResult.ok) saveHistory(lastResult);
+                if (lastResult.events.penultimate !== undefined) await seekTo(lastResult.events.penultimate);
+                drawOverlay();
+            } catch (err) {
+                if (err.message !== "cancelled") {
+                    console.error("Analysis failed:", err);
+                    notify("Analysis Failed", `${err.name || "Error"}: ${err.message}`);
+                }
+            } finally {
+                $("progressPanel").classList.add("hidden");
+                $("analyzeBtn").disabled = false;
+            }
+        });
+
+        function setProgress(p, text) {
+            $("progressBar").style.width = `${Math.round(p * 100)}%`;
+            $("progressText").textContent = text;
+        }
+
+        // ---------- overlay ----------
+        function sizeOverlay() {
+            const r = player.getBoundingClientRect();
+            overlay.width = Math.round(r.width * devicePixelRatio);
+            overlay.height = Math.round(r.height * devicePixelRatio);
+        }
+
+        // Map video pixels to the letterboxed canvas.
+        function videoToCanvas() {
+            const W = player.videoWidth, H = player.videoHeight;
+            const scale = Math.min(overlay.width / W, overlay.height / H);
+            return { scale, ox: (overlay.width - W * scale) / 2, oy: (overlay.height - H * scale) / 2 };
+        }
+
+        function nearestFrame(t) {
+            if (!frames.length) return null;
+            let best = frames[0];
+            for (const f of frames) if (Math.abs(f.t - t) < Math.abs(best.t - t)) best = f;
+            return Math.abs(best.t - t) <= 0.1 ? best : null;
+        }
+
+        function drawOverlay() {
+            if (!overlay.width) sizeOverlay();
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            const f = nearestFrame(player.currentTime);
+            if (!f || !f.lm) return;
+            const { scale, ox, oy } = videoToCanvas();
+            const P = p => [ox + p.x * scale, oy + p.y * scale];
+            const lw = Math.max(2, 2.5 * devicePixelRatio);
+
+            // Floor line and plant markers
+            if (lastResult && lastResult.ground) {
+                const g = lastResult.ground;
+                const y0 = g.a, y1 = g.a + g.b * player.videoWidth;
+                ctx.strokeStyle = "rgba(148,163,184,0.35)";
+                ctx.lineWidth = lw;
+                ctx.beginPath(); ctx.moveTo(ox, oy + y0 * scale); ctx.lineTo(ox + player.videoWidth * scale, oy + y1 * scale); ctx.stroke();
+                const colors = { intent: "#22d3ee", penultimate: "#f472b6", closing: "#facc15" };
+                for (const pl of lastResult.plants || []) {
+                    if (!pl.role) continue;
+                    const gx = pl.x, gy = g.a + g.b * gx;
+                    const [cx, cy] = P({ x: gx, y: gy });
+                    ctx.fillStyle = colors[pl.role];
+                    ctx.beginPath(); ctx.arc(cx, cy, 6 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+                    ctx.font = `bold ${11 * devicePixelRatio}px sans-serif`;
+                    ctx.fillText(pl.role.toUpperCase(), cx - 20 * devicePixelRatio, cy + 18 * devicePixelRatio);
+                }
+            }
+
+            ctx.lineWidth = lw;
+            for (const c of PoseLandmarker.POSE_CONNECTIONS) {
+                const a = f.lm[c.start], b = f.lm[c.end];
+                if (a.v < 0.3 || b.v < 0.3) continue;
+                ctx.strokeStyle = c.start >= 23 && c.end >= 23 ? "rgba(34,211,238,0.9)" : "rgba(255,255,255,0.8)";
+                const [x1, y1] = P(a), [x2, y2] = P(b);
+                ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            }
+            // Hip midpoint, the point the intent-step rule watches
+            const hip = { x: (f.lm[23].x + f.lm[24].x) / 2, y: (f.lm[23].y + f.lm[24].y) / 2 };
+            const [hx, hy] = P(hip);
+            ctx.fillStyle = "#f472b6";
+            ctx.beginPath(); ctx.arc(hx, hy, 6 * devicePixelRatio, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // ---------- results ----------
+        const STATUS = {
+            pass: { icon: "fa-circle-check", color: "text-emerald-400", label: "Good" },
+            warn: { icon: "fa-triangle-exclamation", color: "text-amber-400", label: "Work on it" },
+            fail: { icon: "fa-circle-xmark", color: "text-rose-400", label: "Fix this" },
+            na:   { icon: "fa-circle-minus", color: "text-slate-500", label: "Not measured" },
+        };
+
+        function clearResults() {
+            lastResult = null;
+            $("resultsList").replaceChildren();
+            $("resultsError").classList.add("hidden");
+            $("resultsPlaceholder").classList.remove("hidden");
+            $("scoreBadge").classList.add("hidden");
+            $("timelineCard").classList.add("hidden");
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+        }
+
+        function renderResults(r) {
+            $("resultsPlaceholder").classList.add("hidden");
+            if (r.error) {
+                $("resultsError").textContent = r.error;
+                $("resultsError").classList.remove("hidden");
+            }
+            for (const c of r.checks) {
+                const s = STATUS[c.status];
+                const card = document.createElement("div");
+                card.className = `bg-slate-950 border rounded-xl p-3 check-${c.status}`;
+                const head = document.createElement("div");
+                head.className = "flex items-start justify-between gap-2";
+                const title = document.createElement("span");
+                title.className = "text-sm font-bold text-white";
+                title.textContent = c.title;
+                const badge = document.createElement("span");
+                badge.className = `text-xs font-bold whitespace-nowrap ${s.color}`;
+                badge.innerHTML = `<i class="fa-solid ${s.icon} mr-1"></i>`;
+                badge.append(s.label);
+                head.append(title, badge);
+                const value = document.createElement("p");
+                value.className = "text-xs text-slate-400 mt-1 font-mono";
+                value.textContent = c.value;
+                const cue = document.createElement("p");
+                cue.className = "text-xs text-slate-300 mt-1";
+                cue.textContent = c.cue;
+                card.append(head, value, cue);
+                $("resultsList").append(card);
+            }
+            const scored = r.checks.filter(c => c.status !== "na");
+            if (scored.length) {
+                const good = scored.filter(c => c.status === "pass").length;
+                $("scoreBadge").textContent = `${good}/${scored.length} good`;
+                $("scoreBadge").classList.remove("hidden");
+            }
+            renderTimeline(r);
+        }
+
+        function renderTimeline(r) {
+            const chips = $("eventChips");
+            chips.replaceChildren();
+            const list = [
+                ["Start", r.events.motionStart, "bg-slate-800 text-slate-200"],
+                ["Intent step", r.events.intent, "bg-cyan-500/20 text-cyan-300"],
+                ["Penultimate", r.events.penultimate, "bg-pink-500/20 text-pink-300"],
+                ["Closing step", r.events.closing, "bg-yellow-500/20 text-yellow-300"],
+                ["Takeoff", r.events.takeoff, "bg-emerald-500/20 text-emerald-300"],
+                ["Peak", r.events.apex, "bg-slate-800 text-slate-200"],
+            ];
+            for (const [label, t, cls] of list) {
+                if (t === undefined) continue;
+                const b = document.createElement("button");
+                b.className = `${cls} text-xs font-bold px-3 py-1.5 rounded-lg`;
+                b.textContent = `${label} ${t.toFixed(2)}s`;
+                b.addEventListener("click", () => { player.pause(); setPlayUi(false); player.currentTime = t; });
+                chips.append(b);
+            }
+            if (r.series && r.series.length) {
+                $("timelineCard").classList.remove("hidden");
+                drawHipChart();
+            }
+        }
+
+        function drawHipChart() {
+            const c = $("hipChart");
+            if (!lastResult || !lastResult.series || c.offsetParent === null) return;
+            const r = c.getBoundingClientRect();
+            c.width = Math.round(r.width * devicePixelRatio);
+            c.height = Math.round(r.height * devicePixelRatio);
+            const g = c.getContext("2d");
+            const pts = lastResult.series.filter(p => Number.isFinite(p.hipH));
+            if (pts.length < 2) return;
+            const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+            const vals = pts.map(p => p.hipH);
+            const lo = Math.min(...vals), hi = Math.max(...vals);
+            const pad = 12 * devicePixelRatio;
+            const X = t => pad + ((t - t0) / (t1 - t0 || 1)) * (c.width - 2 * pad);
+            const Y = v => c.height - pad - ((v - lo) / (hi - lo || 1)) * (c.height - 2 * pad);
+            const marks = [["intent", "#22d3ee"], ["penultimate", "#f472b6"], ["closing", "#facc15"], ["takeoff", "#34d399"]];
+            g.lineWidth = 1 * devicePixelRatio;
+            for (const [key, color] of marks) {
+                const t = lastResult.events[key];
+                if (t === undefined) continue;
+                g.strokeStyle = color;
+                g.beginPath(); g.moveTo(X(t), pad); g.lineTo(X(t), c.height - pad); g.stroke();
+            }
+            g.strokeStyle = "#e2e8f0";
+            g.lineWidth = 2 * devicePixelRatio;
+            g.beginPath();
+            pts.forEach((p, i) => (i ? g.lineTo(X(p.t), Y(p.hipH)) : g.moveTo(X(p.t), Y(p.hipH))));
+            g.stroke();
+        }
+
+        // ---------- history (scores only, this browser only) ----------
+        function readHistory() {
+            try {
+                const raw = localStorage.getItem(HISTORY_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (err) {
+                console.warn("Couldn't read saved results:", err);
+                return [];
+            }
+        }
+
+        function writeHistory(list) {
+            try {
+                localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+            } catch (err) {
+                console.warn("Couldn't save results:", err);
+                notify("Not Saved", `This browser blocked saving results. (${err.name}: ${err.message})`);
+            }
+        }
+
+        function saveHistory(r) {
+            const list = readHistory();
+            list.unshift({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                source: sourceMode,
+                checks: r.checks.map(c => ({ id: c.id, title: c.title, status: c.status, value: c.value })),
+                metrics: r.metrics,
+            });
+            writeHistory(list.slice(0, HISTORY_MAX));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const box = $("historyList");
+            box.replaceChildren();
+            const list = readHistory();
+            if (!list.length) {
+                const p = document.createElement("p");
+                p.className = "text-slate-500";
+                p.textContent = "No saved results yet.";
+                box.append(p);
+                return;
+            }
+            for (const item of list) {
+                const scored = item.checks.filter(c => c.status !== "na");
+                const good = scored.filter(c => c.status === "pass").length;
+                const row = document.createElement("div");
+                row.className = "bg-slate-950 border border-slate-800 rounded-lg p-2.5";
+                const head = document.createElement("div");
+                head.className = "flex justify-between items-center";
+                const label = document.createElement("span");
+                label.className = "font-bold text-slate-200";
+                label.textContent = `${new Date(item.date).toLocaleString()} · ${good}/${scored.length} good`;
+                const del = document.createElement("button");
+                del.className = "text-slate-500 hover:text-rose-400";
+                del.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                del.title = "Delete";
+                del.addEventListener("click", () => {
+                    writeHistory(readHistory().filter(h => h.id !== item.id));
+                    renderHistory();
+                });
+                head.append(label, del);
+                const fixes = item.checks.filter(c => c.status === "fail" || c.status === "warn").map(c => c.title);
+                const detail = document.createElement("p");
+                detail.className = "text-slate-500 mt-1";
+                detail.textContent = fixes.length ? `Work on: ${fixes.join("; ")}` : "Every measured check looked good.";
+                row.append(head, detail);
+                box.append(row);
+            }
+        }
+
+        $("clearHistoryBtn").addEventListener("click", () => { writeHistory([]); renderHistory(); });
+        renderHistory();
+
+        // ---------- notification ----------
+        function notify(title, message) {
+            const modal = document.createElement("div");
+            modal.className = "fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50";
+            const box = document.createElement("div");
+            box.className = "bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6";
+            const h = document.createElement("h3");
+            h.className = "text-white font-bold text-lg mb-2";
+            h.textContent = title;
+            const p = document.createElement("p");
+            p.className = "text-slate-400 text-sm leading-relaxed mb-6";
+            p.textContent = message;
+            const btn = document.createElement("button");
+            btn.className = "w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl";
+            btn.textContent = "Okay, got it";
+            btn.addEventListener("click", () => modal.remove());
+            box.append(h, p, btn);
+            modal.append(box);
+            document.body.append(modal);
+        }
+    </script>
+</body>
+</html>
